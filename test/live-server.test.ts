@@ -66,6 +66,11 @@ test('Live Server Automated Tests', async (t) => {
     assert.ok(data.results.some((r: any) => r.name.includes('Spider')));
   });
 
+  await t.test('Live GET /documentation returns Swagger UI 200', async () => {
+    const res = await fetch(`${BASE_URL}/documentation/static/index.html`);
+    assert.equal(res.status, 200);
+  });
+
   await t.test('Live GET /gallery/nfl/verify requires query parameters', async () => {
     const res = await fetch(`${BASE_URL}/gallery/nfl/verify`);
     assert.equal(res.status, 400);
