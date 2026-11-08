@@ -1,13 +1,13 @@
 # ms-generic-gallery
 
-[![Node.js](https://img.shields.io/badge/Node.js-22_LTS-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-24-green.svg)](https://nodejs.org/)
 [![Fastify](https://img.shields.io/badge/Fastify-v5-black.svg)](https://fastify.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Swagger](https://img.shields.io/badge/OpenAPI-3.0_Swagger-85EA2D.svg)](http://localhost:3000/documentation)
 [![Tests](https://img.shields.io/badge/Tests-node%3Atest-brightgreen.svg)]()
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
 
-A high-performance, modular REST microservice built with **Node 22 LTS**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Designed to power multimedia galleries, paginated collections, fuzzy keyword search, and real-time interactive guessing/trivia games.
+A high-performance, modular REST microservice built with **Node 24**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Designed to power multimedia galleries, paginated collections, fuzzy keyword search, and real-time interactive guessing/trivia games.
 
 Serves as the dedicated backend for [**prj-generic-gallery**](https://github.com/himanshusaraswat/prj-generic-gallery) (Angular 19 + Signals).
 
@@ -230,7 +230,7 @@ npm run dev
 
 ## Cloud Deployment (Google Cloud Platform)
 
-Configured for **Google App Engine** and **Google Cloud Run** with Node 22:
+Configured for **Google App Engine** and **Google Cloud Run** with Node 24:
 ```bash
 gcloud app deploy app.yml
 ```
