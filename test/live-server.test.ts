@@ -19,11 +19,14 @@ test('Live Server Automated Tests', async (t) => {
     return;
   }
 
-  await t.test('Live GET / returns health status 200', async () => {
+  await t.test('Live GET / returns health status 200 with DB status', async () => {
     const res = await fetch(`${BASE_URL}/`);
     assert.equal(res.status, 200);
     const data = await res.json();
-    assert.deepEqual(data, { root: true });
+    assert.equal(data.root, true);
+    assert.equal(data.status, 'ok');
+    assert.ok(data.database);
+    assert.equal(data.database.status, 'connected');
   });
 
   await t.test('Live OPTIONS / preflight returns CORS headers for Angular app', async () => {

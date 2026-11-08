@@ -75,12 +75,78 @@ const gallery: FastifyPluginAsync = async (fastify: any): Promise<void> => {
     }
   );
 
-  // 2. Verify guess for any item
+  // 2. Get a single random item for guessing games & trivia mode
+  fastify.get(
+    "/:category/random",
+    {
+      schema: {
+        description: "Get a single random item from category for guessing game / trivia mode",
+        tags: ["Gallery"],
+        params: {
+          type: "object",
+          properties: {
+            category: { type: "string", description: "Gallery category (e.g. marvel, nfl)" }
+          },
+          required: ["category"]
+        },
+        response: {
+          200: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              name: { type: "string" },
+              image: { type: "string" },
+              thumbnail: { type: "object", additionalProperties: true },
+              team: { type: "string" },
+              category: { type: "string" },
+              alterEgo: { type: "string" }
+            }
+          },
+          404: { type: "object", properties: { error: { type: "string" } } }
+        }
+      }
+    },
+    async function (request: FastifyRequest, reply: FastifyReply) {
+      const { category } = request.params as any;
+      const collectionName = resolveCollection(category);
+      const collection = fastify.mongo.db.collection(collectionName);
+
+      let item: any = null;
+      if (typeof collection.aggregate === 'function') {
+        const samples = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
+        item = samples[0];
+      } else {
+        const all = await collection.find().toArray();
+        if (all && all.length > 0) {
+          item = all[Math.floor(Math.random() * all.length)];
+        }
+      }
+
+      if (!item) {
+        return reply.code(404).send({ error: `No items found in category '${category}'` });
+      }
+
+      return reply.send({
+        id: item.id || item._id?.toString(),
+        name: item.name || item.Name || '',
+        image: item.image || (item.thumbnail?.path ? `${item.thumbnail.path}.${item.thumbnail.extension || 'jpg'}` : ''),
+        thumbnail: item.thumbnail || {
+          path: item.image ? item.image.replace(/\.[^/.]+$/, '') : '',
+          extension: item.image ? item.image.split('.').pop() || 'jpg' : 'jpg'
+        },
+        team: item.team || item.Team || '',
+        category,
+        alterEgo: item.alterEgo || ''
+      });
+    }
+  );
+
+  // 3. Verify guess for any item (checks superhero/player name and alter ego)
   fastify.get(
     "/:category/verify",
     {
       schema: {
-        description: "Verify a player or superhero guess by ID and name (case-insensitive)",
+        description: "Verify a player or superhero guess by ID and name/alter-ego (case-insensitive)",
         tags: ["Gallery"],
         params: {
           type: "object",
@@ -93,12 +159,12 @@ const gallery: FastifyPluginAsync = async (fastify: any): Promise<void> => {
           type: "object",
           properties: {
             id: { type: "string", description: "Unique item ID" },
-            name: { type: "string", description: "Guessed character / player name" }
+            name: { type: "string", description: "Guessed character / player name or alter ego" }
           },
           required: ["id", "name"]
         },
         response: {
-          200: { type: "boolean", description: "True if guess is correct" },
+          200: { type: "boolean", description: "True if guess matches character name or alter-ego" },
           400: { type: "object", properties: { error: { type: "string" } } },
           404: { type: "object", properties: { error: { type: "string" }, match: { type: "boolean" } } }
         }
@@ -120,12 +186,15 @@ const gallery: FastifyPluginAsync = async (fastify: any): Promise<void> => {
       }
 
       const itemName = (item.Name || item.name || "").trim().toLowerCase();
+      const alterEgo = (item.alterEgo || "").trim().toLowerCase();
       const guess = name.trim().toLowerCase();
-      return reply.send(itemName === guess);
+      
+      const isMatch = itemName === guess || (alterEgo && alterEgo === guess);
+      return reply.type('application/json').send(JSON.stringify(Boolean(isMatch)));
     }
   );
 
-  // 3. Search items by keyword in category
+  // 4. Search items by keyword in category
   fastify.get(
     "/:category/search",
     {

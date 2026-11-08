@@ -28,25 +28,36 @@ export function createMockMongo(seedData: Record<string, MockItem[]> = {}) {
             }
             return items.length;
           },
-          find: (query?: any) => ({
-            skip: (offset: number) => ({
-              limit: (limit: number) => ({
-                toArray: async () => {
-                  let filtered = items;
-                  if (query && query.$or) {
-                    filtered = items.filter(item => {
-                      const name = (item.Name || item.name || '');
-                      return query.$or.some((clause: any) => {
-                        const pattern = clause.Name || clause.name;
-                        return pattern ? pattern.test(name) : false;
-                      });
-                    });
-                  }
-                  return filtered.slice(offset, offset + limit);
-                }
-              })
-            })
+          aggregate: (pipeline?: any[]) => ({
+            toArray: async () => {
+              if (!items.length) return [];
+              const rand = items[Math.floor(Math.random() * items.length)];
+              return [rand];
+            }
           }),
+          find: (query?: any) => {
+            const getFiltered = () => {
+              let filtered = items;
+              if (query && query.$or) {
+                filtered = items.filter(item => {
+                  const name = (item.Name || item.name || '');
+                  return query.$or.some((clause: any) => {
+                    const pattern = clause.Name || clause.name;
+                    return pattern ? pattern.test(name) : false;
+                  });
+                });
+              }
+              return filtered;
+            };
+            return {
+              toArray: async () => getFiltered(),
+              skip: (offset: number) => ({
+                limit: (limit: number) => ({
+                  toArray: async () => getFiltered().slice(offset, offset + limit)
+                })
+              })
+            };
+          },
           findOne: async (query: any) => {
             if (query._id) {
               const idStr = query._id.toString();

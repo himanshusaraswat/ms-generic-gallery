@@ -18,8 +18,7 @@ export default fp(async (fastify) => {
         { url: 'http://localhost:3000', description: 'Local Development Server' }
       ],
       tags: [
-        { name: 'Gallery', description: 'Generic multimedia gallery endpoints (Marvel, NFL, etc.)' },
-        { name: 'NFL Headshots', description: 'Backward-compatible NFL fan club endpoints' },
+        { name: 'Gallery', description: 'Generic multimedia gallery endpoints (Marvel, NFL, Custom)' },
         { name: 'Healthcheck', description: 'System health monitoring' }
       ]
     }

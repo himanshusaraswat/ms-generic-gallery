@@ -98,3 +98,19 @@ test('GET /gallery/:category/search searches items by keyword', async () => {
   assert.equal(data.results[0].Name, 'Patrick Mahomes');
   await app.close();
 });
+
+
+test('GET /gallery/:category/random returns a single random character', async () => {
+  const app = await buildApp(seedData);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/gallery/marvel/random',
+  });
+
+  assert.equal(response.statusCode, 200);
+  const data = response.json();
+  assert.ok(data.id);
+  assert.ok(data.name);
+  assert.equal(data.category, 'marvel');
+  await app.close();
+});
