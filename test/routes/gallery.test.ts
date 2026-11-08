@@ -114,3 +114,47 @@ test('GET /gallery/:category/random returns a single random character', async ()
   assert.equal(data.category, 'marvel');
   await app.close();
 });
+
+test('Validation: GET /gallery/invalid$category rejects special characters', async () => {
+  const app = await buildApp(seedData);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/gallery/invalid$category',
+  });
+
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});
+
+test('Validation: GET /gallery/:category rejects negative limit', async () => {
+  const app = await buildApp(seedData);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/gallery/nfl?limit=-5',
+  });
+
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});
+
+test('Validation: GET /gallery/:category rejects excessive limit > 100', async () => {
+  const app = await buildApp(seedData);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/gallery/nfl?limit=500',
+  });
+
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});
+
+test('Validation: GET /gallery/:category/search rejects empty search query', async () => {
+  const app = await buildApp(seedData);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/gallery/nfl/search?q=',
+  });
+
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});

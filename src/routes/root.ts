@@ -1,42 +1,28 @@
 import { FastifyPluginAsync } from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { HealthcheckResponseSchema } from '../schemas/root.schema';
 
-const root: FastifyPluginAsync = async (fastify: any, opts): Promise<void> => {
-  fastify.get(
+const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+  fastify.withTypeProvider<ZodTypeProvider>().get(
     '/',
     {
       schema: {
         description: 'System healthcheck and live MongoDB connectivity probe',
         tags: ['Healthcheck'],
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              status: { type: 'string' },
-              root: { type: 'boolean' },
-              uptime: { type: 'number' },
-              timestamp: { type: 'string' },
-              database: {
-                type: 'object',
-                properties: {
-                  status: { type: 'string' },
-                  cluster: { type: 'string' },
-                  name: { type: 'string' }
-                }
-              }
-            }
-          }
-        }
-      }
+          200: HealthcheckResponseSchema,
+        },
+      },
     },
-    async function (request: any, reply: any) {
+    async function (request, reply) {
       let dbStatus = 'disconnected';
       const dbHost = process.env.DB_HOST || 'local/in-memory';
       const dbName = process.env.DB_NAME || 'generic-gallery';
 
-      if (fastify.mongo?.db) {
+      if ((fastify as any).mongo?.db) {
         try {
-          if (typeof fastify.mongo.db.command === 'function') {
-            await fastify.mongo.db.command({ ping: 1 });
+          if (typeof (fastify as any).mongo.db.command === 'function') {
+            await (fastify as any).mongo.db.command({ ping: 1 });
             dbStatus = 'connected';
           } else {
             dbStatus = 'mock-dev';
@@ -46,16 +32,20 @@ const root: FastifyPluginAsync = async (fastify: any, opts): Promise<void> => {
         }
       }
 
+      const overallStatus: 'ok' | 'degraded' =
+        dbStatus === 'connected' || dbStatus === 'mock-dev' ? 'ok' : 'degraded';
+
       return {
-        status: dbStatus === 'connected' || dbStatus === 'mock-dev' ? 'ok' : 'degraded',
+        status: overallStatus,
         root: true,
+        service: 'ms-generic-gallery' as const,
         uptime: Math.round(process.uptime() * 100) / 100,
         timestamp: new Date().toISOString(),
         database: {
           status: dbStatus,
           cluster: dbHost,
-          name: dbName
-        }
+          name: dbName,
+        },
       };
     }
   );
