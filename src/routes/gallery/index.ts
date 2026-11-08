@@ -9,13 +9,35 @@ interface Records {
 const gallery: FastifyPluginAsync = async (fastify: any): Promise<void> => {
   fastify.register(require("fastify-pagination"));
 
-  // 1. Get paginated items for any category (e.g. /gallery/nfl, /gallery/marvel, /gallery/headshots)
+  // 1. Get paginated items for any category (e.g. /gallery/nfl, /gallery/marvel)
   fastify.get("/:category", async function (request: any, reply: any) {
     const { category } = request.params;
     const collectionName = resolveCollection(category);
     const { limit, offset } = request.parsePagination();
     const { items, count } = await getItemsAndTotalCount(fastify, collectionName, limit, offset);
-    reply.sendWithPagination({ count, page: items });
+
+    const formatted = items.map((item: any) => ({
+      ...item,
+      id: item.id || item._id?.toString(),
+      name: item.name || item.Name || '',
+      image: item.image || (item.thumbnail?.path ? `${item.thumbnail.path}.${item.thumbnail.extension || 'jpg'}` : ''),
+      thumbnail: item.thumbnail || {
+        path: item.image ? item.image.replace(/\.[^/.]+$/, '') : '',
+        extension: item.image ? item.image.split('.').pop() || 'jpg' : 'jpg'
+      }
+    }));
+
+    reply.sendWithPagination({
+      count,
+      page: formatted,
+      data: {
+        offset,
+        limit,
+        total: count,
+        count: formatted.length,
+        results: formatted
+      }
+    });
   });
 
   // 2. Verify guess for any item
@@ -56,7 +78,28 @@ const gallery: FastifyPluginAsync = async (fastify: any): Promise<void> => {
     const count = await collection.countDocuments(query);
     const items = await collection.find(query).skip(offset).limit(limit).toArray();
 
-    reply.sendWithPagination({ count, page: items });
+    const formatted = items.map((item: any) => ({
+      ...item,
+      id: item.id || item._id?.toString(),
+      name: item.name || item.Name || '',
+      image: item.image || (item.thumbnail?.path ? `${item.thumbnail.path}.${item.thumbnail.extension || 'jpg'}` : ''),
+      thumbnail: item.thumbnail || {
+        path: item.image ? item.image.replace(/\.[^/.]+$/, '') : '',
+        extension: item.image ? item.image.split('.').pop() || 'jpg' : 'jpg'
+      }
+    }));
+
+    reply.sendWithPagination({
+      count,
+      page: formatted,
+      data: {
+        offset,
+        limit,
+        total: count,
+        count: formatted.length,
+        results: formatted
+      }
+    });
   });
 };
 

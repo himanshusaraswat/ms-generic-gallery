@@ -64,3 +64,6 @@ test/types/index.js
 # compiled app
 .env
 dist/*
+
+# local dev & seeding scripts
+scripts/

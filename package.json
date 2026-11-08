@@ -9,11 +9,12 @@
   "scripts": {
     "test": "npm run build:ts && node --test dist/test/routes/**/*.test.js",
     "test:watch": "node --watch --test dist/test/routes/**/*.test.js",
-    "start": "fastify start -l info -a 0.0.0.0 -p ${PORT:-8080} dist/app.js",
+    "test:live": "npm run build:ts && node --test dist/test/live-server.test.js",
+    "start": "fastify start -l info -a 0.0.0.0 -p ${PORT:-8080} dist/src/app.js",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start --ignore-watch=.ts$ -w -l info -a 0.0.0.0 -p 3000 -P dist/app.js"
+    "dev:start": "fastify start -r dotenv/config --ignore-watch=.ts$ -w -l info -a 0.0.0.0 -p 3000 -P dist/src/app.js"
   },
   "keywords": [
     "fastify",
