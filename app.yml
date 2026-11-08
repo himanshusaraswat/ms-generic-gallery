@@ -1,0 +1,8 @@
+runtime: nodejs22
+env: standard
+instance_class: F1
+handlers:
+  - url: .*
+    script: auto
+automatic_scaling:
+  min_instances: 0

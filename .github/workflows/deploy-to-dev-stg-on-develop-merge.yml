@@ -1,0 +1,60 @@
+name: Deploy To GAE On Merge To Develop
+'on':
+  push:
+    branches:
+      - develop
+jobs:
+  dev_build_and_deploy:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    runs-on: ubuntu-latest
+    steps:
+      - id: 'checkout'
+        name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - id: 'setupNode'
+        name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - id: 'install'
+        name: 'Install Existing Dependencies'
+        run: npm ci
+
+      - id: 'test'
+        name: 'Execute TDD Test Suite'
+        run: npm test
+
+      - id: 'Build'
+        name: 'Build artifacts'
+        run: npm run build:ts
+
+      - id: 'storeDist'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist
+
+      - id: 'auth'
+        name: 'Authenticate To Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: ${{ secrets.DEV_STG_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.DEV_STG_WIP_SA }}
+
+      - id: 'deploy'
+        name: 'Deploy To Google Cloud App Engine'
+        uses: 'google-github-actions/deploy-appengine@v2'
+        with:
+          deliverables: './app.yml'
+          env_vars: |-
+            DB_NAME=${{ secrets.DEV_STG_DB_NAME }}
+            DB_PASS=${{ secrets.DEV_STG_DB_PASS }}
+            DB_USER=${{ secrets.DEV_STG_DB_USER }}
+
+      - id: 'smokeTest'
+        name: 'Smoke Test Deployed URL'
+        run: 'curl -f "${{ steps.deploy.outputs.url }}"'
