@@ -3,19 +3,13 @@ import AutoLoad, { AutoloadPluginOptions } from '@fastify/autoload';
 import { FastifyPluginAsync, FastifyServerOptions } from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
-import {
-  validatorCompiler,
-  serializerCompiler,
-} from 'fastify-type-provider-zod';
+import { validatorCompiler, serializerCompiler } from 'fastify-type-provider-zod';
 
 export interface AppOptions extends FastifyServerOptions, Partial<AutoloadPluginOptions> {}
 
 const options: AppOptions = {};
 
-const app: FastifyPluginAsync<AppOptions> = async (
-  fastify,
-  opts
-): Promise<void> => {
+const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void> => {
   // Set up Zod type provider compilers
   fastify.setValidatorCompiler(validatorCompiler);
   fastify.setSerializerCompiler(serializerCompiler);
@@ -24,19 +18,19 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.register(cors, {
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true,
+    credentials: true
   });
 
   // Load all plugins defined in plugins
   void fastify.register(AutoLoad, {
     dir: join(__dirname, 'plugins'),
-    options: opts,
+    options: opts
   });
 
   // Load all routes defined in routes
   void fastify.register(AutoLoad, {
     dir: join(__dirname, 'routes'),
-    options: opts,
+    options: opts
   });
 };
 

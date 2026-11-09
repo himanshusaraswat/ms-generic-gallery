@@ -8,18 +8,20 @@ export default fp(async (fastify) => {
     openapi: {
       info: {
         title: 'Generic Gallery Microservice API',
-        description: 'High-performance Fastify + Node 24 + MongoDB microservice for multimedia galleries, superhero archives, sports headshots, and guessing games.',
+        description:
+          'High-performance Fastify + Node 24 + MongoDB microservice for multimedia galleries, superhero archives, sports headshots, and guessing games.',
         version: '1.0.0',
         contact: {
           name: 'Himanshu Saraswat',
           url: 'https://github.com/himanshusaraswat'
         }
       },
-      servers: [
-        { url: 'http://localhost:3000', description: 'Local Development Server' }
-      ],
+      servers: [{ url: 'http://localhost:3000', description: 'Local Development Server' }],
       tags: [
-        { name: 'Gallery', description: 'Generic multimedia gallery endpoints (Marvel, NFL, Custom)' },
+        {
+          name: 'Gallery',
+          description: 'Generic multimedia gallery endpoints (Marvel, NFL, Custom)'
+        },
         { name: 'Healthcheck', description: 'System health monitoring' }
       ]
     },

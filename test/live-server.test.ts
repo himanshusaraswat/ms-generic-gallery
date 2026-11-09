@@ -15,7 +15,9 @@ test('Live Server Automated Tests', async (t) => {
     }
   } catch {
     console.log(`⚠️  Live server is not running at ${BASE_URL}.`);
-    console.log('💡 Start the server first with `npm run dev` in another terminal, then run `npm run test:live`.');
+    console.log(
+      '💡 Start the server first with `npm run dev` in another terminal, then run `npm run test:live`.'
+    );
     return;
   }
 
@@ -34,8 +36,8 @@ test('Live Server Automated Tests', async (t) => {
       method: 'OPTIONS',
       headers: {
         Origin: 'http://localhost:4200',
-        'Access-Control-Request-Method': 'POST',
-      },
+        'Access-Control-Request-Method': 'POST'
+      }
     });
     assert.equal(res.status, 204);
     const allowMethods = String(res.headers.get('access-control-allow-methods') || '');

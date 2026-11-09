@@ -10,9 +10,9 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         description: 'System healthcheck and live MongoDB connectivity probe',
         tags: ['Healthcheck'],
         response: {
-          200: HealthcheckResponseSchema,
-        },
-      },
+          200: HealthcheckResponseSchema
+        }
+      }
     },
     async function (request, reply) {
       let dbStatus = 'disconnected';
@@ -44,8 +44,8 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         database: {
           status: dbStatus,
           cluster: dbHost,
-          name: dbName,
-        },
+          name: dbName
+        }
       };
     }
   );

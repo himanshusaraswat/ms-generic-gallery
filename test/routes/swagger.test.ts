@@ -12,7 +12,7 @@ test('Swagger OpenAPI Documentation and Live Console', async (t) => {
   await t.test('GET /documentation/static/index.html returns Swagger UI HTML page', async () => {
     const res = await app.inject({
       url: '/documentation/static/index.html',
-      method: 'GET',
+      method: 'GET'
     });
     assert.equal(res.statusCode, 200);
     assert.ok(res.headers['content-type']?.includes('text/html'));
@@ -21,7 +21,7 @@ test('Swagger OpenAPI Documentation and Live Console', async (t) => {
   await t.test('GET /documentation/json returns valid OpenAPI 3.0 schema', async () => {
     const res = await app.inject({
       url: '/documentation/json',
-      method: 'GET',
+      method: 'GET'
     });
     assert.equal(res.statusCode, 200);
     const data = JSON.parse(res.payload);

@@ -10,11 +10,17 @@
     "test": "npm run build:ts && node --test dist/test/routes/**/*.test.js",
     "test:watch": "node --watch --test dist/test/routes/**/*.test.js",
     "test:live": "npm run build:ts && node --test dist/test/live-server.test.js",
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' 'test/**/*.ts' --fix",
+    "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check 'src/**/*.{ts,js,json}' 'test/**/*.{ts,js,json}'",
+    "format:fix": "prettier --write 'src/**/*.{ts,js,json}' 'test/**/*.{ts,js,json}'",
     "start": "fastify start -l info -a 0.0.0.0 -p ${PORT:-8080} dist/src/app.js",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
-    "dev:start": "fastify start -r dotenv/config --ignore-watch=.ts$ -w -l info -a 0.0.0.0 -p 3000 -P dist/src/app.js"
+    "dev:start": "fastify start -r dotenv/config --ignore-watch=.ts$ -w -l info -a 0.0.0.0 -p 3000 -P dist/src/app.js",
+    "prepare": "husky"
   },
   "keywords": [
     "fastify",
@@ -41,9 +47,17 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
     "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "concurrently": "^7.0.0",
+    "eslint": "^10.14.0",
     "fastify-tsconfig": "^1.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
     "typescript": "^5.4.0"
   }
 }

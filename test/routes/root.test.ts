@@ -6,7 +6,7 @@ test('GET / healthcheck returns status ok and database info', async () => {
   const app = await buildApp({});
   const response = await app.inject({
     method: 'GET',
-    url: '/',
+    url: '/'
   });
 
   assert.equal(response.statusCode, 200);

@@ -5,14 +5,14 @@ import { mockHeadshots, mockMarvel } from '../fixtures/gallery-fixtures';
 
 const seedData = {
   'nfl-headshot': mockHeadshots,
-  marvel: mockMarvel,
+  marvel: mockMarvel
 };
 
 test('GET /gallery/:category returns paginated items with count and results', async () => {
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl?limit=2&offset=0',
+    url: '/gallery/nfl?limit=2&offset=0'
   });
 
   assert.equal(response.statusCode, 200);
@@ -27,7 +27,7 @@ test('GET /gallery/:category with Marvel returns marvel items', async () => {
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/marvel?limit=5&offset=0',
+    url: '/gallery/marvel?limit=5&offset=0'
   });
 
   assert.equal(response.statusCode, 200);
@@ -41,7 +41,7 @@ test('GET /gallery/:category/verify matches correct guess case-insensitively wit
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/verify?id=64b000000000000000000001&name=  pATRIck MAhOMEs  ',
+    url: '/gallery/nfl/verify?id=64b000000000000000000001&name=  pATRIck MAhOMEs  '
   });
 
   assert.equal(response.statusCode, 200);
@@ -53,7 +53,7 @@ test('GET /gallery/:category/verify returns false for wrong guess', async () => 
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/verify?id=64b000000000000000000001&name=Tom Brady',
+    url: '/gallery/nfl/verify?id=64b000000000000000000001&name=Tom Brady'
   });
 
   assert.equal(response.statusCode, 200);
@@ -65,7 +65,7 @@ test('GET /gallery/:category/verify returns 404 for non-existent item id', async
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/verify?id=000000000000000000000000&name=Anyone',
+    url: '/gallery/nfl/verify?id=000000000000000000000000&name=Anyone'
   });
 
   assert.equal(response.statusCode, 404);
@@ -78,7 +78,7 @@ test('GET /gallery/:category/verify returns 400 when missing query parameters', 
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/verify',
+    url: '/gallery/nfl/verify'
   });
 
   assert.equal(response.statusCode, 400);
@@ -89,7 +89,7 @@ test('GET /gallery/:category/search searches items by keyword', async () => {
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/search?q=mahomes',
+    url: '/gallery/nfl/search?q=mahomes'
   });
 
   assert.equal(response.statusCode, 200);
@@ -99,12 +99,11 @@ test('GET /gallery/:category/search searches items by keyword', async () => {
   await app.close();
 });
 
-
 test('GET /gallery/:category/random returns a single random character', async () => {
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/marvel/random',
+    url: '/gallery/marvel/random'
   });
 
   assert.equal(response.statusCode, 200);
@@ -119,7 +118,7 @@ test('Validation: GET /gallery/invalid$category rejects special characters', asy
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/invalid$category',
+    url: '/gallery/invalid$category'
   });
 
   assert.equal(response.statusCode, 400);
@@ -130,7 +129,7 @@ test('Validation: GET /gallery/:category rejects negative limit', async () => {
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl?limit=-5',
+    url: '/gallery/nfl?limit=-5'
   });
 
   assert.equal(response.statusCode, 400);
@@ -141,7 +140,7 @@ test('Validation: GET /gallery/:category rejects excessive limit > 100', async (
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl?limit=500',
+    url: '/gallery/nfl?limit=500'
   });
 
   assert.equal(response.statusCode, 400);
@@ -152,7 +151,7 @@ test('Validation: GET /gallery/:category/search rejects empty search query', asy
   const app = await buildApp(seedData);
   const response = await app.inject({
     method: 'GET',
-    url: '/gallery/nfl/search?q=',
+    url: '/gallery/nfl/search?q='
   });
 
   assert.equal(response.statusCode, 400);

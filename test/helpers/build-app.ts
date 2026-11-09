@@ -18,8 +18,8 @@ export function createMockMongo(seedData: Record<string, MockItem[]> = {}) {
           countDocuments: async (query?: any) => {
             if (!query) return items.length;
             if (query.$or) {
-              return items.filter(item => {
-                const name = (item.Name || item.name || '');
+              return items.filter((item) => {
+                const name = item.Name || item.name || '';
                 return query.$or.some((clause: any) => {
                   const pattern = clause.Name || clause.name;
                   return pattern ? pattern.test(name) : false;
@@ -39,8 +39,8 @@ export function createMockMongo(seedData: Record<string, MockItem[]> = {}) {
             const getFiltered = () => {
               let filtered = items;
               if (query && query.$or) {
-                filtered = items.filter(item => {
-                  const name = (item.Name || item.name || '');
+                filtered = items.filter((item) => {
+                  const name = item.Name || item.name || '';
                   return query.$or.some((clause: any) => {
                     const pattern = clause.Name || clause.name;
                     return pattern ? pattern.test(name) : false;
@@ -61,10 +61,10 @@ export function createMockMongo(seedData: Record<string, MockItem[]> = {}) {
           findOne: async (query: any) => {
             if (query._id) {
               const idStr = query._id.toString();
-              return items.find(item => item._id === idStr) || null;
+              return items.find((item) => item._id === idStr) || null;
             }
             if (query.id) {
-              return items.find(item => item.id === query.id || item._id === query.id) || null;
+              return items.find((item) => item.id === query.id || item._id === query.id) || null;
             }
             return items[0] || null;
           }

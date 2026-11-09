@@ -1,6 +1,6 @@
-import { FastifyPluginAsync, FastifyInstance } from "fastify";
-import { ZodTypeProvider } from "fastify-type-provider-zod";
-import { ObjectId } from "@fastify/mongodb";
+import { FastifyPluginAsync, FastifyInstance } from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { ObjectId } from '@fastify/mongodb';
 import {
   CategoryParamSchema,
   PaginationQuerySchema,
@@ -9,9 +9,9 @@ import {
   VerifyResponseSchema,
   VerifyNotFoundResponseSchema,
   SearchQuerySchema,
-  NotFoundResponseSchema,
-} from "../../schemas/gallery.schema";
-import { GalleryItemSchema, ErrorResponseSchema } from "../../schemas/common.schema";
+  NotFoundResponseSchema
+} from '../../schemas/gallery.schema';
+import { GalleryItemSchema, ErrorResponseSchema } from '../../schemas/common.schema';
 
 interface Records {
   items: any[];
@@ -19,24 +19,24 @@ interface Records {
 }
 
 const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<void> => {
-  fastify.register(require("fastify-pagination"));
+  fastify.register(require('fastify-pagination'));
 
   const typedFastify = fastify.withTypeProvider<ZodTypeProvider>();
 
   // 1. Get paginated items for any category (e.g. /gallery/nfl, /gallery/marvel)
   typedFastify.get(
-    "/:category",
+    '/:category',
     {
       schema: {
-        description: "Fetch paginated gallery items for any category (e.g. marvel, nfl)",
-        tags: ["Gallery"],
+        description: 'Fetch paginated gallery items for any category (e.g. marvel, nfl)',
+        tags: ['Gallery'],
         params: CategoryParamSchema,
         querystring: PaginationQuerySchema,
         response: {
           200: PaginatedGalleryResponseSchema,
-          400: ErrorResponseSchema,
-        },
-      },
+          400: ErrorResponseSchema
+        }
+      }
     },
     async function (request, reply) {
       const { category } = request.params;
@@ -47,12 +47,14 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
 
       const formatted = items.map((item: any) => formatGalleryItem(item));
 
-      const next = offset + limit < count
-        ? `/gallery/${category}?limit=${limit}&offset=${offset + limit}`
-        : null;
-      const previous = offset > 0
-        ? `/gallery/${category}?limit=${limit}&offset=${Math.max(0, offset - limit)}`
-        : null;
+      const next =
+        offset + limit < count
+          ? `/gallery/${category}?limit=${limit}&offset=${offset + limit}`
+          : null;
+      const previous =
+        offset > 0
+          ? `/gallery/${category}?limit=${limit}&offset=${Math.max(0, offset - limit)}`
+          : null;
 
       return reply.send({
         count,
@@ -64,26 +66,26 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
           limit,
           total: count,
           count: formatted.length,
-          results: formatted,
-        },
+          results: formatted
+        }
       });
     }
   );
 
   // 2. Get a single random item for guessing games & trivia mode
   typedFastify.get(
-    "/:category/random",
+    '/:category/random',
     {
       schema: {
-        description: "Get a single random item from category for guessing game / trivia mode",
-        tags: ["Gallery"],
+        description: 'Get a single random item from category for guessing game / trivia mode',
+        tags: ['Gallery'],
         params: CategoryParamSchema,
         response: {
           200: GalleryItemSchema,
           400: ErrorResponseSchema,
-          404: NotFoundResponseSchema,
-        },
-      },
+          404: NotFoundResponseSchema
+        }
+      }
     },
     async function (request, reply) {
       const { category } = request.params;
@@ -91,7 +93,7 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
       const collection = (fastify as any).mongo.db.collection(collectionName);
 
       let item: any = null;
-      if (typeof collection.aggregate === "function") {
+      if (typeof collection.aggregate === 'function') {
         const samples = await collection.aggregate([{ $sample: { size: 1 } }]).toArray();
         item = samples[0];
       } else {
@@ -111,19 +113,20 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
 
   // 3. Verify guess for any item (checks superhero/player name and alter ego)
   typedFastify.get(
-    "/:category/verify",
+    '/:category/verify',
     {
       schema: {
-        description: "Verify a player or superhero guess by ID and name/alter-ego (case-insensitive)",
-        tags: ["Gallery"],
+        description:
+          'Verify a player or superhero guess by ID and name/alter-ego (case-insensitive)',
+        tags: ['Gallery'],
         params: CategoryParamSchema,
         querystring: VerifyQuerySchema,
         response: {
           200: VerifyResponseSchema,
           400: ErrorResponseSchema,
-          404: VerifyNotFoundResponseSchema,
-        },
-      },
+          404: VerifyNotFoundResponseSchema
+        }
+      }
     },
     async function (request, reply) {
       const { category } = request.params;
@@ -133,11 +136,11 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
       const item = await findById(fastify, collectionName, id);
 
       if (!item) {
-        return reply.code(404).send({ error: "Item not found", match: false });
+        return reply.code(404).send({ error: 'Item not found', match: false });
       }
 
-      const itemName = (item.Name || item.name || "").trim().toLowerCase();
-      const alterEgo = (item.alterEgo || "").trim().toLowerCase();
+      const itemName = (item.Name || item.name || '').trim().toLowerCase();
+      const alterEgo = (item.alterEgo || '').trim().toLowerCase();
       const guess = name.trim().toLowerCase();
 
       const isMatch = itemName === guess || (alterEgo && alterEgo === guess);
@@ -147,18 +150,18 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
 
   // 4. Search items by keyword in category
   typedFastify.get(
-    "/:category/search",
+    '/:category/search',
     {
       schema: {
-        description: "Search items in a gallery category by name keyword",
-        tags: ["Gallery"],
+        description: 'Search items in a gallery category by name keyword',
+        tags: ['Gallery'],
         params: CategoryParamSchema,
         querystring: SearchQuerySchema,
         response: {
           200: PaginatedGalleryResponseSchema,
-          400: ErrorResponseSchema,
-        },
-      },
+          400: ErrorResponseSchema
+        }
+      }
     },
     async function (request, reply) {
       const { category } = request.params;
@@ -168,7 +171,7 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
 
       const collectionName = resolveCollection(category);
       const safeKeyword = escapeRegex(q);
-      const regex = new RegExp(safeKeyword, "i");
+      const regex = new RegExp(safeKeyword, 'i');
       const query = { $or: [{ Name: regex }, { name: regex }] };
 
       const collection = (fastify as any).mongo.db.collection(collectionName);
@@ -177,12 +180,14 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
 
       const formatted = items.map((item: any) => formatGalleryItem(item));
 
-      const next = offset + limit < count
-        ? `/gallery/${category}?limit=${limit}&offset=${offset + limit}`
-        : null;
-      const previous = offset > 0
-        ? `/gallery/${category}?limit=${limit}&offset=${Math.max(0, offset - limit)}`
-        : null;
+      const next =
+        offset + limit < count
+          ? `/gallery/${category}?limit=${limit}&offset=${offset + limit}`
+          : null;
+      const previous =
+        offset > 0
+          ? `/gallery/${category}?limit=${limit}&offset=${Math.max(0, offset - limit)}`
+          : null;
 
       return reply.send({
         count,
@@ -194,40 +199,42 @@ const gallery: FastifyPluginAsync = async (fastify: FastifyInstance): Promise<vo
           limit,
           total: count,
           count: formatted.length,
-          results: formatted,
-        },
+          results: formatted
+        }
       });
     }
   );
 };
 
 function resolveCollection(category: string): string {
-  const normalized = (category || "").toLowerCase();
-  if (normalized === "nfl" || normalized === "headshots") {
-    return "nfl-headshot";
+  const normalized = (category || '').toLowerCase();
+  if (normalized === 'nfl' || normalized === 'headshots') {
+    return 'nfl-headshot';
   }
   return normalized;
 }
 
 function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function formatGalleryItem(item: any, fallbackCategory?: string) {
-  const image = item.image || (item.thumbnail?.path ? `${item.thumbnail.path}.${item.thumbnail.extension || "jpg"}` : "");
-  const name = item.name || item.Name || "";
+  const image =
+    item.image ||
+    (item.thumbnail?.path ? `${item.thumbnail.path}.${item.thumbnail.extension || 'jpg'}` : '');
+  const name = item.name || item.Name || '';
   return {
-    id: item.id || item._id?.toString() || "",
+    id: item.id || item._id?.toString() || '',
     name,
     Name: name,
     image,
     thumbnail: item.thumbnail || {
-      path: image ? image.replace(/\.[^/.]+$/, "") : "",
-      extension: image ? image.split(".").pop() || "jpg" : "jpg",
+      path: image ? image.replace(/\.[^/.]+$/, '') : '',
+      extension: image ? image.split('.').pop() || 'jpg' : 'jpg'
     },
     team: item.team || item.Team || undefined,
     category: item.category || fallbackCategory || undefined,
-    alterEgo: item.alterEgo || undefined,
+    alterEgo: item.alterEgo || undefined
   };
 }
 

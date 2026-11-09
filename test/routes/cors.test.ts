@@ -9,8 +9,8 @@ test('CORS preflight request allows modern methods and origins', async () => {
     url: '/',
     headers: {
       origin: 'http://localhost:4200',
-      'access-control-request-method': 'POST',
-    },
+      'access-control-request-method': 'POST'
+    }
   });
 
   assert.equal(response.statusCode, 204);
