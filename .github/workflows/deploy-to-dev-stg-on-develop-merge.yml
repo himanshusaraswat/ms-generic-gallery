@@ -1,4 +1,4 @@
-name: Deploy To GAE On Merge To Develop
+name: Deploy To Cloud Run On Merge To Develop
 
 on:
   push:
@@ -92,19 +92,44 @@ jobs:
           workload_identity_provider: ${{ secrets.DEV_STG_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.DEV_STG_WIP_SA }}
 
-      - id: deploy
+      - id: setupGcloud
         if: env.DEPLOY_ENABLED == 'true'
-        name: Deploy To Google Cloud App Engine
-        uses: google-github-actions/deploy-appengine@v2
-        with:
-          deliverables: './app.yml'
-          env_vars: |-
-            DB_NAME=${{ secrets.DEV_STG_DB_NAME }}
-            DB_PASS=${{ secrets.DEV_STG_DB_PASS }}
-            DB_USER=${{ secrets.DEV_STG_DB_USER }}
-            DB_HOST=${{ secrets.DEV_STG_DB_HOST }}
+        name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-      - id: smokeTest
+      - id: configureDocker
         if: env.DEPLOY_ENABLED == 'true'
-        name: Smoke Test Deployed URL
-        run: 'curl -f "${{ steps.deploy.outputs.url }}"'
+        name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - id: buildAndPushDocker
+        if: env.DEPLOY_ENABLED == 'true'
+        name: Build and Push Docker Image
+        run: |
+          PROJECT_ID="${{ vars.GCP_PROJECT_ID || 'meraki-public' }}"
+          REGION="${{ vars.GCP_REGION || 'us-central1' }}"
+          REPO_NAME="ms-generic-gallery"
+          IMAGE_TAG="us-central1-docker.pkg.dev/${PROJECT_ID}/apps/${REPO_NAME}:${{ github.sha }}"
+          LATEST_TAG="us-central1-docker.pkg.dev/${PROJECT_ID}/apps/${REPO_NAME}:latest"
+
+          docker build -t "$IMAGE_TAG" -t "$LATEST_TAG" .
+          docker push "$IMAGE_TAG"
+          docker push "$LATEST_TAG"
+          echo "DEPLOY_IMAGE=$IMAGE_TAG" >> $GITHUB_ENV
+
+      - id: deployCloudRun
+        if: env.DEPLOY_ENABLED == 'true'
+        name: Deploy to Google Cloud Run (Scale to Zero)
+        run: |
+          gcloud run deploy ms-generic-gallery \
+            --image "$DEPLOY_IMAGE" \
+            --region us-central1 \
+            --platform managed \
+            --min-instances 0 \
+            --max-instances 2 \
+            --port 3000 \
+            --cpu 1000m \
+            --memory 512Mi \
+            --set-env-vars "NODE_ENV=production,PORT=3000,DB_NAME=${{ secrets.DEV_STG_DB_NAME }},DB_PASS=${{ secrets.DEV_STG_DB_PASS }},DB_USER=${{ secrets.DEV_STG_DB_USER }},DB_HOST=${{ secrets.DEV_STG_DB_HOST }}" \
+            --allow-unauthenticated \
+            --quiet
