@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "npm run build:ts && node --test dist/test/routes/**/*.test.js",
+    "test": "tsc -p tsconfig.test.json && node --test dist/test/routes/**/*.test.js",
     "test:watch": "node --watch --test dist/test/routes/**/*.test.js",
     "test:live": "npm run build:ts && node --test dist/test/live-server.test.js",
     "lint": "eslint 'src/**/*.ts' 'test/**/*.ts'",
@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "format:check": "prettier --check 'src/**/*.{ts,js,json}' 'test/**/*.{ts,js,json}'",
     "format:fix": "prettier --write 'src/**/*.{ts,js,json}' 'test/**/*.{ts,js,json}'",
-    "start": "fastify start -l info -a 0.0.0.0 -p ${PORT:-8080} dist/src/app.js",
+    "start": "node dist/server.js",
     "build:ts": "tsc",
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
