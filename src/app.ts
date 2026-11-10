@@ -15,8 +15,28 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void>
   fastify.setSerializerCompiler(serializerCompiler);
 
   fastify.register(helmet, { global: true });
+
+  const ALLOWED_ORIGINS = [
+    'https://meraki-public.web.app',
+    'https://meraki-public.firebaseapp.com'
+  ];
+
   fastify.register(cors, {
-    origin: true,
+    origin: (origin, cb) => {
+      // Allow requests without origin (curl, server-to-server, healthchecks)
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      if (
+        ALLOWED_ORIGINS.includes(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+      ) {
+        cb(null, true);
+        return;
+      }
+      cb(new Error('Not allowed by CORS'), false);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
   });
@@ -31,6 +51,12 @@ const app: FastifyPluginAsync<AppOptions> = async (fastify, opts): Promise<void>
   void fastify.register(AutoLoad, {
     dir: join(__dirname, 'routes'),
     options: opts
+  });
+
+  // Expose routes under /api for reverse proxy compatibility (Firebase Hosting /api/** rewrite)
+  void fastify.register(AutoLoad, {
+    dir: join(__dirname, 'routes'),
+    options: { ...opts, prefix: '/api' }
   });
 };
 
