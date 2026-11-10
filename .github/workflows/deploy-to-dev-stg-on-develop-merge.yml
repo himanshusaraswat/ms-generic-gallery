@@ -1,6 +1,7 @@
 name: Deploy To Cloud Run On Merge To Develop
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - develop
