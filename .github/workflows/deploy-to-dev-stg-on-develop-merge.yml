@@ -5,6 +5,19 @@ on:
   push:
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'test/**'
+      - 'tsconfig.test.json'
+      - '.husky/**'
+      - '.lintstagedrc.json'
+      - '.prettierrc'
+      - '.prettierignore'
+      - 'commitlint.config.mjs'
+      - 'LICENSE'
+      - '.gitignore'
+      - '.nvmrc'
 
 permissions:
   contents: read
