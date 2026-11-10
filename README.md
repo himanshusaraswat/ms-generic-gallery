@@ -5,14 +5,15 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-128_MiB_Gen1-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![Scale to Zero](<https://img.shields.io/badge/Cost-$0_Idle_(Scale_0--2)-00C853>)](https://cloud.google.com/run/pricing)
+[![Zero Keys](<https://img.shields.io/badge/Security-Zero_JSON_Keys_(OIDC_WIF)-00B0FF>)](https://cloud.google.com/iam/docs/workload-identity-federation)
 [![Artifact Registry](https://img.shields.io/badge/Artifact_Registry-2--Version_Pruning-EA4335?logo=docker&logoColor=white)](https://cloud.google.com/artifact-registry)
 [![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0_Swagger_UI-85EA2D?logo=swagger&logoColor=black)](http://localhost:3000/documentation)
 [![Firebase App Check](https://img.shields.io/badge/App_Check-Attestation_Gated-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/app-check)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
 
-A high-throughput, ultra-lean microservice built with **Node 26 Alpine**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Engineered for **Google Cloud Run** with a **128 MiB memory footprint**, **V8 heap constraint tuning**, **scale-to-zero ($0 idle cost)**, **automated 2-version CI/CD pruning**, and **Firebase App Check attestation**.
+A high-throughput, ultra-lean microservice engineered with **Node 26 Alpine**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Purpose-built for **Google Cloud Run** with a **128 MiB micro-footprint**, **V8 heap constraint tuning**, **scale-to-zero ($0 idle cost)**, **automated 2-version CI/CD pruning**, **keyless Workload Identity Federation (WIF)**, and **cryptographic Firebase App Check attestation**.
 
-Serves as the dedicated backend for [**prj-generic-gallery**](https://github.com/himanshusaraswat/prj-generic-gallery) (Angular 22 Zoneless + Signals).
+Serves as the high-concurrency, low-latency backend for [**prj-generic-gallery**](https://github.com/himanshusaraswat/prj-generic-gallery) (Angular 22 Zoneless + Signals).
 
 ---
 
@@ -20,17 +21,45 @@ Serves as the dedicated backend for [**prj-generic-gallery**](https://github.com
 
 ### 1. 🏎️ 128 MiB Cloud Run Micro-Footprint & V8 Heap Tuning
 
-- **Cloud Run First Generation (`EXECUTION_ENVIRONMENT_GEN1`)**: Tuned to run comfortably in a minimal **128 MiB container** with 1000m vCPU and request-based CPU allocation (`cpu_idle = true`).
-- **V8 Heap Constraint Optimization**: Injected `NODE_OPTIONS="--max-old-space-size=90"` into the container runtime. This instructs the V8 engine to trigger aggressive garbage collection before approaching the 128 MiB container limit, eliminating Out-of-Memory (OOM) crashes under load.
-- **Fastify 5 Low-Overhead Architecture**: Boasts 3x–5x lower memory overhead compared to Express, keeping idle RSS memory under ~45 MiB.
+- **Cloud Run First Generation (`EXECUTION_ENVIRONMENT_GEN1`)**: Tuned to run in a minimal **128 MiB container** with 1000m vCPU and request-based CPU allocation (`cpu_idle = true`). Yields ultra-fast sub-800ms cold starts without Gen2 virtualization lag.
+- **V8 Heap Constraint Optimization**: Injected `NODE_OPTIONS="--max-old-space-size=90"` into the container runtime. This instructs the V8 engine to trigger aggressive Mark-Sweep garbage collection cycles before approaching the 128 MiB container limit, keeping idle RSS memory under ~45 MiB and eliminating Out-of-Memory (OOM) crashes under concurrency spikes.
+- **Fastify 5 Low-Overhead Engine**: Fastify's asynchronous plugin architecture and compiled route trees achieve 3x–5x lower memory overhead compared to traditional Express microservices.
 
 ### 2. 💰 Scale-to-Zero & $0 Monthly Idle Cost
 
 - Configured with `min_instance_count = 0` and `max_instance_count = 2`.
-- When there is no traffic, instances scale completely down to **0**.
-- Fully covered by Google Cloud Run's Always-Free tier (2 million free requests, 360,000 GiB-seconds, and 240,000 vCPU-seconds per month), resulting in **$0 hosting cost during idle periods**.
+- When inbound HTTP traffic ceases, Cloud Run scales active instances down to **0**.
+- Fully covered by Google Cloud Run's Always-Free tier (2,000,000 free requests, 360,000 GiB-seconds, and 240,000 vCPU-seconds per month), resulting in **$0 hosting cost during idle and exploration phases**.
 
-### 3. 🧹 Automated 2-Revision & 2-Version CI/CD Pruning
+### 3. 🔐 Zero-Secret Workload Identity Federation (WIF)
+
+- **Eliminates Static JSON Service Account Keys**: GitHub Actions runners never store or receive private credentials.
+- **Cryptographic OIDC Token Exchange**: The runner requests a short-lived OpenID Connect JWT token from GitHub's token issuer (`token.actions.githubusercontent.com`), which Google Cloud's Security Token Service (`sts.googleapis.com`) validates against cryptographic JWKS public keys.
+- **Granular Attribute Verification**: GCP STS verifies repository claims (`assertion.repository == 'himanshusaraswat/ms-generic-gallery'`) before issuing a temporary federated access token to impersonate the target deployment Service Account (`gh-action-be-deployer`).
+- **Zero Rotation Overhead**: Because tokens expire in 15–60 minutes and exist purely in memory, there are zero static keys to rotate, leak, or manage.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor CI as GitHub Actions Trigger
+    participant GH as GitHub Runner (OIDC Token)
+    participant STS as GCP Security Token Service (gh-gae-pool)
+    participant IAM as Service Account (gh-action-be-deployer)
+    participant Registry as Google Artifact Registry
+    participant CloudRun as Google Cloud Run
+
+    CI->>GH: Execute Deployment Workflow
+    GH->>STS: Exchange Ephemeral OIDC JWT for Federated STS Token
+    STS->>STS: Validate Cryptographic Signature & Repository Claim
+    STS-->>GH: Issue Temporary Federated Token
+    GH->>IAM: Impersonate Backend Deployer Service Account
+    IAM-->>GH: Scoped Access Token (1-hour lifetime)
+    GH->>Registry: Build & Push Node 26 Docker Image
+    GH->>CloudRun: Deploy Container Revision (128Mi / 1000m)
+    CloudRun-->>GH: 200 OK Revision Ready & Traffic Swapped
+```
+
+### 4. 🧹 Automated 2-Revision & 2-Version CI/CD Pruning
 
 Every deployment via GitHub Actions ([`deploy-to-dev-stg-on-develop-merge.yml`](.github/workflows/deploy-to-dev-stg-on-develop-merge.yml)) automatically executes garbage collection:
 
@@ -46,11 +75,18 @@ flowchart LR
     E --> F["Automated Image Pruner (Keeps Exactly 2 Tags)"]
 ```
 
-### 4. 🛡️ Multi-Layer Defense (App Check & CORS Whitelist)
+### 5. 🛡️ Multi-Layer Perimeter Defense (App Check & CORS Whitelist)
 
-- **Firebase App Check Attestation**: Validates `X-Firebase-AppCheck` tokens via Google App Check API to block scrapers, unauthorized bots, and postman replays.
-- **Strict CORS Whitelist**: Dynamic origin validation allowing only authorized Firebase domains (`meraki-public.web.app`, `meraki-public.firebaseapp.com`) and local dev (`localhost:4200`).
+- **Firebase App Check Attestation**: Validates `X-Firebase-AppCheck` tokens via Google App Check API to reject unauthenticated bots, web scrapers, and curl replays at the perimeter before executing MongoDB queries.
+- **Strict CORS Origin Whitelist**: Dynamic origin validation allowing only authorized Firebase domains (`meraki-public.web.app`, `meraki-public.firebaseapp.com`) and local development (`localhost:4200`).
 - **Helmet Security Headers**: Auto-sets standard CSP, frameguards, and HSTS headers.
+
+### 6. ⚡ Extensible Generic Service Architecture
+
+- **Zod Runtime Schema Contracts**: Requests, query strings, and responses are strongly validated at the boundary via `fastify-type-provider-zod`.
+- **Resilient MongoDB Atlas Driver**: Built-in connection pooling, exponential backoff, socket timeout handling, and in-memory mock store fallback for offline tests.
+- **Deep Healthcheck Diagnostics**: `/health` measures active MongoDB ping latency (`pingMs`), process uptime, and memory statistics.
+- **Interactive OpenAPI 3.0 / Swagger UI**: Built-in documentation console served at `/documentation`.
 
 ---
 
@@ -85,6 +121,9 @@ sequenceDiagram
 
 ```text
 ms-generic-gallery/
+├── .husky/
+│   ├── pre-commit              # Shift-left quality gate (lint-staged + typecheck + test)
+│   └── commit-msg              # Conventional commit validation
 ├── src/
 │   ├── plugins/
 │   │   ├── app-check.ts        # Firebase App Check attestation token validator
@@ -95,13 +134,13 @@ ms-generic-gallery/
 │   ├── routes/
 │   │   ├── gallery/            # Paginated collection & keyword search endpoints
 │   │   ├── game/               # Random challenge ($sample) & verify endpoints
-│   │   └── health/             # Live database ping & uptime healthcheck
+│   │   └── root.ts             # Live database ping & uptime healthcheck (/health)
 │   ├── schemas/                # Zod request & response validation schemas
 │   ├── app.ts                  # Fastify application factory & plugin registration
 │   └── server.ts               # Standalone runtime entrypoint & graceful shutdown
 ├── test/
-│   ├── routes/                 # node:test unit & integration test suites
-│   └── helper.ts               # Fastify test harness & mock database injection
+│   ├── routes/                 # node:test unit & integration test suites (24 tests)
+│   └── helpers/                # Fastify test harness & mock database injection
 ├── .github/workflows/
 │   ├── ci.yml                  # PR quality gate (test, typecheck, lint, Docker dry-run)
 │   └── deploy-to-dev-stg-on-develop-merge.yml # Automated Cloud Run deployment + pruner
@@ -243,6 +282,18 @@ Performs regex-based case-insensitive search across item names with pagination.
 
 ---
 
+## 🔒 Shift-Left Pre-Commit Architecture
+
+Quality is enforced directly on the developer's workstation via `.husky/pre-commit` before any code is committed:
+
+1. **`lint-staged`**: Formats and lints staged TypeScript and JSON files with Prettier and ESLint.
+2. **`npm run typecheck`**: Runs `tsc --noEmit` to verify type safety across the entire codebase.
+3. **`npm run test`**: Runs the complete unit and route test suite (24 tests in <1s).
+
+If any type check, test, or linter check fails, the commit is aborted locally with actionable diagnostic feedback.
+
+---
+
 ## 🛠️ Quickstart & Local Development
 
 ### 1. Clone & Install
@@ -276,11 +327,15 @@ PORT=3000
 ### 3. Run Automated Tests
 
 ```bash
-# Unit Test Suite (Sub-second in-memory tests with node:test)
+# Unit Test Suite (Sub-second in-memory tests with node:test - 24 passed in <1s)
 npm test
 
 # Live Server Test Suite (End-to-end testing against active server and live MongoDB)
 npm run test:live
+
+# Typecheck & Linting
+npm run typecheck
+npm run lint
 ```
 
 ### 4. Start Development Server

@@ -28,7 +28,7 @@ export function createMockMongo(seedData: Record<string, MockItem[]> = {}) {
             }
             return items.length;
           },
-          aggregate: (pipeline?: any[]) => ({
+          aggregate: (_pipeline?: any[]) => ({
             toArray: async () => {
               if (!items.length) return [];
               const rand = items[Math.floor(Math.random() * items.length)];

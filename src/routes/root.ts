@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { HealthcheckResponseSchema } from '../schemas/root.schema';
 
-const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
+const root: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
   fastify.withTypeProvider<ZodTypeProvider>().get(
     '/',
     {
@@ -14,7 +14,7 @@ const root: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
         }
       }
     },
-    async function (request, reply) {
+    async function (_request, _reply) {
       let dbStatus = 'disconnected';
       const dbHost = process.env.DB_HOST || 'local/in-memory';
       const dbName = process.env.DB_NAME || 'generic-gallery';
