@@ -1,73 +1,140 @@
-# ms-generic-gallery
+# ⚡ ms-generic-gallery
 
-[![Node.js](https://img.shields.io/badge/Node.js-24-green.svg)](https://nodejs.org/)
-[![Fastify](https://img.shields.io/badge/Fastify-v5-black.svg)](https://fastify.io/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
-[![Swagger](https://img.shields.io/badge/OpenAPI-3.0_Swagger-85EA2D.svg)](http://localhost:3000/documentation)
-[![Tests](https://img.shields.io/badge/Tests-node%3Atest-brightgreen.svg)]()
+[![Node.js](https://img.shields.io/badge/Node.js-26_Alpine-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Fastify](https://img.shields.io/badge/Fastify-v5.7-black?logo=fastify&logoColor=white)](https://fastify.io/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Google Cloud Run](https://img.shields.io/badge/Cloud_Run-128_MiB_Gen1-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Scale to Zero](<https://img.shields.io/badge/Cost-$0_Idle_(Scale_0--2)-00C853>)](https://cloud.google.com/run/pricing)
+[![Artifact Registry](https://img.shields.io/badge/Artifact_Registry-2--Version_Pruning-EA4335?logo=docker&logoColor=white)](https://cloud.google.com/artifact-registry)
+[![OpenAPI 3.0](https://img.shields.io/badge/OpenAPI-3.0_Swagger_UI-85EA2D?logo=swagger&logoColor=black)](http://localhost:3000/documentation)
+[![Firebase App Check](https://img.shields.io/badge/App_Check-Attestation_Gated-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/docs/app-check)
 [![License: ISC](https://img.shields.io/badge/License-ISC-yellow.svg)](https://opensource.org/licenses/ISC)
 
-A high-performance, modular REST microservice built with **Node 24**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Designed to power multimedia galleries, paginated collections, fuzzy keyword search, and real-time interactive guessing/trivia games.
+A high-throughput, ultra-lean microservice built with **Node 26 Alpine**, **Fastify 5**, **TypeScript**, and **MongoDB Atlas**. Engineered for **Google Cloud Run** with a **128 MiB memory footprint**, **V8 heap constraint tuning**, **scale-to-zero ($0 idle cost)**, **automated 2-version CI/CD pruning**, and **Firebase App Check attestation**.
 
-Serves as the dedicated backend for [**prj-generic-gallery**](https://github.com/himanshusaraswat/prj-generic-gallery) (Angular 19 + Signals).
-
----
-
-## Interactive Swagger / OpenAPI Documentation
-
-Interactive OpenAPI 3.0 documentation and an in-browser live test console are built directly into the microservice:
-
-- **Swagger UI Console**: [http://localhost:3000/documentation](http://localhost:3000/documentation)
-- **OpenAPI Schema**: [http://localhost:3000/documentation/json](http://localhost:3000/documentation/json)
-
-You can inspect all request schemas, query parameters, response contracts, and test live queries against your MongoDB cluster directly inside the browser using Swagger's **"Try it out"** button.
+Serves as the dedicated backend for [**prj-generic-gallery**](https://github.com/himanshusaraswat/prj-generic-gallery) (Angular 22 Zoneless + Signals).
 
 ---
 
-## System Architecture & Game Flow
+## 🌟 Enterprise Engineering Wins
 
-The microservice supports both standard paginated browsing and dynamic trivia/guessing gameplay:
+### 1. 🏎️ 128 MiB Cloud Run Micro-Footprint & V8 Heap Tuning
+
+- **Cloud Run First Generation (`EXECUTION_ENVIRONMENT_GEN1`)**: Tuned to run comfortably in a minimal **128 MiB container** with 1000m vCPU and request-based CPU allocation (`cpu_idle = true`).
+- **V8 Heap Constraint Optimization**: Injected `NODE_OPTIONS="--max-old-space-size=90"` into the container runtime. This instructs the V8 engine to trigger aggressive garbage collection before approaching the 128 MiB container limit, eliminating Out-of-Memory (OOM) crashes under load.
+- **Fastify 5 Low-Overhead Architecture**: Boasts 3x–5x lower memory overhead compared to Express, keeping idle RSS memory under ~45 MiB.
+
+### 2. 💰 Scale-to-Zero & $0 Monthly Idle Cost
+
+- Configured with `min_instance_count = 0` and `max_instance_count = 2`.
+- When there is no traffic, instances scale completely down to **0**.
+- Fully covered by Google Cloud Run's Always-Free tier (2 million free requests, 360,000 GiB-seconds, and 240,000 vCPU-seconds per month), resulting in **$0 hosting cost during idle periods**.
+
+### 3. 🧹 Automated 2-Revision & 2-Version CI/CD Pruning
+
+Every deployment via GitHub Actions ([`deploy-to-dev-stg-on-develop-merge.yml`](.github/workflows/deploy-to-dev-stg-on-develop-merge.yml)) automatically executes garbage collection:
+
+- **Cloud Run Revisions**: Prunes historical inactive revisions down to **exactly 2** (1 active revision serving 100% traffic + 1 instant rollback candidate).
+- **Artifact Registry Docker Digests**: Prunes older container digests down to **2 releases** (active + rollback), preventing storage bloat and unnecessary GCP storage charges.
+
+```mermaid
+flowchart LR
+    A["git push develop"] --> B["GitHub Actions CI/CD (Keyless WIF)"]
+    B --> C["Build & Push Docker Image (Node 26 Alpine)"]
+    C --> D["Deploy to Cloud Run (128Mi / 1000m)"]
+    D --> E["Automated Revision Pruner (Keeps Exactly 2 Revisions)"]
+    E --> F["Automated Image Pruner (Keeps Exactly 2 Tags)"]
+```
+
+### 4. 🛡️ Multi-Layer Defense (App Check & CORS Whitelist)
+
+- **Firebase App Check Attestation**: Validates `X-Firebase-AppCheck` tokens via Google App Check API to block scrapers, unauthorized bots, and postman replays.
+- **Strict CORS Whitelist**: Dynamic origin validation allowing only authorized Firebase domains (`meraki-public.web.app`, `meraki-public.firebaseapp.com`) and local dev (`localhost:4200`).
+- **Helmet Security Headers**: Auto-sets standard CSP, frameguards, and HSTS headers.
+
+---
+
+## 🏛️ System Architecture & Request Lifecycle
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Player
-    participant FE as Angular Frontend (prj-generic-gallery)
-    participant BE as Fastify Microservice (ms-generic-gallery)
-    participant DB as MongoDB Atlas Cluster
+    actor Client as Frontend (Angular 22 Zoneless)
+    participant Edge as Firebase Hosting / Cloud Run
+    participant Fastify as Fastify 5 Engine (Node 26)
+    participant Security as App Check & CORS Plugin
+    participant Mongo as MongoDB Atlas Cluster
 
-    Note over FE,BE: 🎮 PLAY / TRIVIA MODE (Random Gameplay)
-    FE->>BE: GET /gallery/marvel/random
-    BE->>DB: db.collection.aggregate([{ $sample: { size: 1 } }])
-    DB-->>BE: Random Hero Document
-    BE-->>FE: { id: "1009368", image: "...", alterEgo: "Tony Stark", ... }
-    FE->>Player: Displays mystery hero card with clues
-
-    Player->>FE: Submits guess "Iron Man" (or "Tony Stark")
-    FE->>BE: GET /gallery/marvel/verify?id=1009368&name=iron man
-    BE->>DB: Find item by ID
-    DB-->>BE: Document { name: "Iron Man", alterEgo: "Tony Stark" }
-    BE-->>FE: true (HTTP 200)
-    FE->>Player: 🎉 Confetti animation triggers! Auto-fetches next random card!
-
-    Note over FE,BE: 🖼️ BROWSE / GALLERY MODE (Paginated Grid)
-    FE->>BE: GET /gallery/marvel?limit=10&offset=0
-    BE->>DB: Find items with skip/limit & countDocuments
-    DB-->>BE: 10 items + total count
-    BE-->>FE: Dual envelope response: { results: [...], data: { results: [...] } }
+    Client->>Edge: GET /gallery/marvel?limit=12
+    Edge->>Fastify: Request Routed to Container
+    Fastify->>Security: Validate Origin & App Check Token
+    alt Invalid / Bot Origin
+        Security-->>Client: 401 Unauthorized / 403 Forbidden
+    else Valid Origin & Attestation
+        Security->>Fastify: Forward to Gallery Route
+        Fastify->>Fastify: Validate Zod Query Schemas
+        Fastify->>Mongo: Query Collection (skip/limit & countDocuments)
+        Mongo-->>Fastify: Return Documents
+        Fastify-->>Client: Dual Envelope JSON Response (200 OK)
+    end
 ```
 
 ---
 
-## API Endpoints
+## 📁 Repository Structure & Scaffold
+
+```text
+ms-generic-gallery/
+├── src/
+│   ├── plugins/
+│   │   ├── app-check.ts        # Firebase App Check attestation token validator
+│   │   ├── cors.ts             # Strict origin whitelist & preflight handler
+│   │   ├── db.ts               # Resilient MongoDB Atlas driver & in-memory fallback
+│   │   ├── helmet.ts           # Security headers plugin
+│   │   └── swagger.ts          # OpenAPI 3.0 & Swagger UI documentation setup
+│   ├── routes/
+│   │   ├── gallery/            # Paginated collection & keyword search endpoints
+│   │   ├── game/               # Random challenge ($sample) & verify endpoints
+│   │   └── health/             # Live database ping & uptime healthcheck
+│   ├── schemas/                # Zod request & response validation schemas
+│   ├── app.ts                  # Fastify application factory & plugin registration
+│   └── server.ts               # Standalone runtime entrypoint & graceful shutdown
+├── test/
+│   ├── routes/                 # node:test unit & integration test suites
+│   └── helper.ts               # Fastify test harness & mock database injection
+├── .github/workflows/
+│   ├── ci.yml                  # PR quality gate (test, typecheck, lint, Docker dry-run)
+│   └── deploy-to-dev-stg-on-develop-merge.yml # Automated Cloud Run deployment + pruner
+├── Dockerfile                  # Multi-stage Node 26 Alpine build (V8 90MB Heap)
+├── .dockerignore               # Optimized Docker build context
+└── package.json                # Fastify 5, Zod, and MongoDB dependencies
+```
+
+---
+
+## 📖 Interactive Swagger / OpenAPI Documentation
+
+Interactive OpenAPI 3.0 documentation and an in-browser live test console are built directly into the microservice:
+
+- **Swagger UI Console**: [http://localhost:3000/documentation](http://localhost:3000/documentation)
+- **OpenAPI JSON Schema**: [http://localhost:3000/documentation/json](http://localhost:3000/documentation/json)
+
+You can inspect all request schemas, query parameters, response contracts, and test live queries directly inside the browser using Swagger's **"Try it out"** button.
+
+---
+
+## 🔌 API Endpoints
 
 ### 1. Deep Healthcheck
+
 ```http
-GET /
+GET /health
 ```
+
 Performs a live ping (`db.command({ ping: 1 })`) to the MongoDB Atlas cluster, verifies connectivity, and returns process health and uptime.
 
 **Response**: `200 OK`
+
 ```json
 {
   "status": "ok",
@@ -79,28 +146,26 @@ Performs a live ping (`db.command({ ping: 1 })`) to the MongoDB Atlas cluster, v
     "pingMs": 14
   },
   "uptime": 128.45,
-  "timestamp": "2026-11-08T22:50:00.000Z"
+  "timestamp": "2026-11-10T22:50:00.000Z"
 }
 ```
 
 ---
 
 ### 2. Paginated Gallery
+
 ```http
-GET /gallery/:category?limit=10&offset=0
+GET /gallery/:category?limit=12&offset=0
 ```
+
 Returns paginated multimedia cards for any collection (e.g. `/gallery/marvel`, `/gallery/nfl`). Features a dual-envelope response format (`results` and `data.results`) for seamless compatibility with Angular Signals and classic REST clients.
 
-**Parameters**:
-- `category` *(path, required)*: Collection name (`marvel`, `nfl`)
-- `limit` *(query, default: 10)*: Number of items per page
-- `offset` *(query, default: 0)*: Number of items to skip
-
 **Response**: `200 OK`
+
 ```json
 {
   "count": 269,
-  "next": "/gallery/marvel?limit=10&offset=10",
+  "next": "/gallery/marvel?limit=12&offset=12",
   "previous": null,
   "results": [
     {
@@ -116,9 +181,9 @@ Returns paginated multimedia cards for any collection (e.g. `/gallery/marvel`, `
   ],
   "data": {
     "offset": 0,
-    "limit": 10,
+    "limit": 12,
     "total": 269,
-    "count": 10,
+    "count": 12,
     "results": [ ... ]
   }
 }
@@ -126,13 +191,16 @@ Returns paginated multimedia cards for any collection (e.g. `/gallery/marvel`, `
 
 ---
 
-### 3. Random Item (Guessing Game & Trivia)
+### 3. Random Mystery Item (Trivia & Guessing Game)
+
 ```http
 GET /gallery/:category/random
 ```
-Fetches a single random character or player using MongoDB's optimized `$sample: { size: 1 }` pipeline. Eliminates repetitive alphabetical sequences and guarantees infinite replayability without boundary errors.
+
+Fetches a single random character or player using MongoDB's optimized `$sample: { size: 1 }` aggregation pipeline. Eliminates repetitive alphabetical sequences and guarantees infinite replayability without boundary errors.
 
 **Response**: `200 OK`
+
 ```json
 {
   "id": "1009368",
@@ -150,12 +218,15 @@ Fetches a single random character or player using MongoDB's optimized `$sample: 
 ---
 
 ### 4. Guess Verification
+
 ```http
 GET /gallery/:category/verify?id=<ITEM_ID>&name=<GUESS>
 ```
+
 Secure server-side validation for guessing games. Validates guesses case-insensitively with automatic whitespace trimming against both the item's primary name and alter ego (e.g., matching both "Tony Stark" and "Iron Man").
 
 **Response**: `200 OK`
+
 ```json
 true
 ```
@@ -163,31 +234,19 @@ true
 ---
 
 ### 5. Fuzzy Keyword Search
-```http
-GET /gallery/:category/search?q=<KEYWORD>&limit=10&offset=0
-```
-Performs regex-based case-insensitive search across item names with pagination.
 
-**Response**: `200 OK`
-```json
-{
-  "count": 1,
-  "results": [
-    {
-      "id": "1009610",
-      "name": "Spider-Man (Peter Parker)",
-      "alterEgo": "Peter Parker",
-      "image": "https://cdn.jsdelivr.net/.../spiderman.jpg"
-    }
-  ]
-}
+```http
+GET /gallery/:category/search?q=<KEYWORD>&limit=12&offset=0
 ```
+
+Performs regex-based case-insensitive search across item names with pagination.
 
 ---
 
-## Quickstart & Local Development
+## 🛠️ Quickstart & Local Development
 
 ### 1. Clone & Install
+
 ```bash
 git clone https://github.com/himanshusaraswat/ms-generic-gallery.git
 cd ms-generic-gallery
@@ -195,11 +254,15 @@ npm install
 ```
 
 ### 2. Configure Environment
+
 Copy `.env.example` to `.env`:
+
 ```bash
 cp .env.example .env
 ```
+
 Populate `.env` with your MongoDB Atlas credentials:
+
 ```env
 DB_USER=generic-gallery-read-only
 DB_PASS=your_secure_password
@@ -207,37 +270,46 @@ DB_NAME=generic-gallery
 DB_HOST=hs-dev-cluster.tuponkw.mongodb.net
 PORT=3000
 ```
-> **Graceful Offline Fallback**: If MongoDB Atlas is unreachable or offline, Fastify automatically falls back to an in-memory development store so the server boots smoothly without crashing.
+
+> **Graceful Offline Fallback**: If MongoDB Atlas is unreachable or offline, Fastify automatically falls back to an in-memory mock development store so the server boots smoothly without crashing.
 
 ### 3. Run Automated Tests
-- **Unit Test Suite** (Sub-second in-memory tests with `node:test`):
-  ```bash
-  npm test
-  ```
-- **Live Server Test Suite** (End-to-end testing against active server and live MongoDB):
-  ```bash
-  npm run test:live
-  ```
+
+```bash
+# Unit Test Suite (Sub-second in-memory tests with node:test)
+npm test
+
+# Live Server Test Suite (End-to-end testing against active server and live MongoDB)
+npm run test:live
+```
 
 ### 4. Start Development Server
+
 ```bash
 npm run dev
 ```
+
 - API Server: [http://localhost:3000](http://localhost:3000)
 - Interactive Swagger UI: [http://localhost:3000/documentation](http://localhost:3000/documentation)
 
 ---
 
-## Cloud Deployment (Google Cloud Platform)
+## 🚀 Cloud Deployment (Google Cloud Run)
 
-Configured for **Google App Engine** and **Google Cloud Run** with Node 24:
+Containerized and deployed to **Google Cloud Run First Generation** with Keyless OIDC authentication via **Workload Identity Federation**:
+
 ```bash
-gcloud app deploy app.yml
+# Build production Docker image (Node 26 Alpine)
+docker build -t ms-generic-gallery:latest .
+
+# Run locally with 128 MiB memory limit and 90 MB V8 heap
+docker run -p 3000:3000 -m 128m -e NODE_OPTIONS="--max-old-space-size=90" ms-generic-gallery:latest
 ```
 
-Automated CI/CD runs via GitHub Actions on merge to `develop` ([`.github/workflows/deploy-to-dev-stg-on-develop-merge.yml`](.github/workflows/deploy-to-dev-stg-on-develop-merge.yml)).
+Continuous Deployment is managed automatically by GitHub Actions ([`.github/workflows/deploy-to-dev-stg-on-develop-merge.yml`](.github/workflows/deploy-to-dev-stg-on-develop-merge.yml)) on merge to `develop`.
 
 ---
 
-## License
+## 📄 License
+
 ISC © [Himanshu Saraswat](https://github.com/himanshusaraswat)
