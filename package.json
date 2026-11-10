@@ -20,6 +20,7 @@
     "watch:ts": "tsc -w",
     "dev": "npm run build:ts && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch:ts\" \"npm:dev:start\"",
     "dev:start": "fastify start -r dotenv/config --ignore-watch=.ts$ -w -l info -a 0.0.0.0 -p 3000 -P dist/src/app.js",
+    "check:drift": "node ../infra-cloud-orchestrator/scripts/check-doc-drift.mjs",
     "prepare": "husky"
   },
   "keywords": [
