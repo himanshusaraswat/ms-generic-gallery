@@ -1,6 +1,6 @@
 # Multi-stage production build for Fastify backend microservice
 # Stage 1: Build TypeScript artifacts
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY src ./src
 RUN npm run build:ts
 
 # Stage 2: Minimal production runtime (~60MB)
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 
 WORKDIR /app
 
