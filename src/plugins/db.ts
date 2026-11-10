@@ -123,7 +123,7 @@ export default fp<FastifyMongodbOptions>(async (fastify) => {
     uri ||
     `mongodb+srv://${encodeURIComponent(user!)}:${encodeURIComponent(pass!)}@${dbHost}/?retryWrites=true&w=majority`;
 
-  const client = new MongoClient(connectionUrl, { serverSelectionTimeoutMS: 2000 });
+  const client = new MongoClient(connectionUrl, { serverSelectionTimeoutMS: 7500 });
   try {
     await client.connect();
     await fastify.register(fastifyMongodb, {
