@@ -156,3 +156,24 @@ jobs:
             fi
           done
           echo "✅ Cloud Run revisions pruned to 2."
+
+      - id: pruneArtifactRegistry
+        if: env.DEPLOY_ENABLED == 'true'
+        name: Prune Inactive Artifact Registry Images (Retain Latest 2)
+        run: |
+          echo "🧹 Cleaning up older Artifact Registry images (keeping latest 2)..."
+          PROJECT_ID="${{ vars.GCP_PROJECT_ID || 'meraki-public' }}"
+          REGION="${{ vars.GCP_REGION || 'us-central1' }}"
+          REPO_NAME="ms-generic-gallery"
+          IMAGE_PATH="${REGION}-docker.pkg.dev/${PROJECT_ID}/apps/${REPO_NAME}"
+
+          gcloud artifacts docker images list "$IMAGE_PATH" \
+            --sort-by="~CREATE_TIME" \
+            --format="value(version)" | tail -n +3 | \
+          while read -r v; do
+            if [ -n "$v" ]; then
+              echo "Deleting older image digest: $v"
+              gcloud artifacts docker images delete "${IMAGE_PATH}@${v}" --delete-tags --quiet || true
+            fi
+          done
+          echo "✅ Artifact Registry images pruned to 2."
