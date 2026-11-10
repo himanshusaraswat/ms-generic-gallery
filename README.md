@@ -78,7 +78,7 @@ flowchart LR
 ### 5. 🛡️ Multi-Layer Perimeter Defense (App Check & CORS Whitelist)
 
 - **Firebase App Check Attestation**: Validates `X-Firebase-AppCheck` tokens via Google App Check API to reject unauthenticated bots, web scrapers, and curl replays at the perimeter before executing MongoDB queries.
-- **Strict CORS Origin Whitelist**: Dynamic origin validation allowing only authorized Firebase domains (`meraki-public.web.app`, `meraki-public.firebaseapp.com`) and local development (`localhost:4200`).
+- **Strict CORS Origin Whitelist**: Dynamic origin validation allowing only authorized Firebase domains (`your-domain.web.app`, `your-domain.firebaseapp.com`) and local development (`localhost:4200`).
 - **Helmet Security Headers**: Auto-sets standard CSP, frameguards, and HSTS headers.
 
 ### 6. ⚡ Extensible Generic Service Architecture
@@ -318,7 +318,7 @@ Populate `.env` with your MongoDB Atlas credentials:
 DB_USER=generic-gallery-read-only
 DB_PASS=your_secure_password
 DB_NAME=generic-gallery
-DB_HOST=hs-dev-cluster.tuponkw.mongodb.net
+DB_HOST=your-cluster.mongodb.net
 PORT=3000
 ```
 
